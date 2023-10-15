@@ -4,7 +4,7 @@ global_state = {}
 function love.load()
   math.randomseed(os.time())
   love.window.setFullscreen(true)
-  global_settings.maxWidth, global_settings.maxHeight, _ = love.window.getMode()
+  global_settings.max_width, global_settings.max_height, _ = love.window.getMode()
   global_state.player = {
     x = 100,
     y = 100,
@@ -25,7 +25,7 @@ function love.load()
     update = update_player,
     draw = draw_square,
   }
-  global_state.enemies = create_enemies(1)
+  global_state.enemies = create_enemies(3)
   global_state.collectables = create_collectables(10)
 end
 
@@ -34,8 +34,8 @@ function create_entities(count, overwrites)
   for entity_index = 1, count do
     entities[entity_index] = {
       active = true,
-      x = math.random(100, 500),
-      y = math.random(100, 500),
+      x = math.random(100, global_settings.max_width),
+      y = math.random(100, global_settings.max_height),
       width = 14,
       height = 14,
       angle = 0,
@@ -67,14 +67,12 @@ end
 
 function create_enemies(count)
   return create_entities(count, {
-    x = 500,
-    y = 500,
     r = 1,
     g = 0,
     b = 0,
     x_speed = 200,
     y_speed = 200,
-    update = update_collectable,
+    update = update_enemy,
     width = 50,
     height = 50,
   })
@@ -111,20 +109,58 @@ function draw_square(square)
   love.graphics.pop()
 end
 
+function update_enemy(square, dt)
+  if square.active == false then
+    return
+  end
+
+  square.angle = square.angle + 0.1
+
+  -- give a little breathing room
+  if math.random(1,20) == 1 then
+    return
+  end
+
+  local player = global_state.player
+  if player.x < square.x then
+    square.x_dir = -1
+  else
+    square.x_dir = 1
+  end
+
+  if player.y < square.y then
+    square.y_dir = -1
+  else
+    square.y_dir = 1
+  end
+
+  -- give a little breathing room
+  if math.random(1,20) == 1 then
+    square.x_dir = square.x_dir * -1
+  end
+  -- give a little breathing room
+  if math.random(1,20) == 1 then
+    square.y_dir = square.y_dir * -1
+  end
+
+  square.x = square.x + square.x_dir * square.x_speed * dt
+  square.y = square.y + square.y_dir * square.y_speed * dt
+end
+
 function update_collectable(square, dt)
   if square.active == false then
     return
   end
 
   square.angle = square.angle + 0.1
-  if square.x > global_settings.maxWidth - 50 then
+  if square.x > global_settings.max_width - 50 then
     square.x_dir = -1;
   elseif square.x < 50 then
     square.x_dir = 1;
   end
   square.x = square.x + square.x_dir * square.x_speed * dt
 
-  if square.y > global_settings.maxHeight - 50 then
+  if square.y > global_settings.max_height - 50 then
     square.y_dir = -1;
   elseif square.y < 50 then
     square.y_dir = 1;
@@ -217,13 +253,13 @@ function update_player(player, dt)
 
   local last_player_x = player.x
   player.x = player.x + player.x_velocity * dt
-  if player.x > global_settings.maxWidth - 50 or player.x < 50 then
+  if player.x > global_settings.max_width - 50 or player.x < 50 then
     player.x = last_player_x
   end
 
   local last_player_y = player.y
   player.y = player.y + player.y_velocity * dt
-  if player.y > global_settings.maxHeight - 50 or player.y < 50 then
+  if player.y > global_settings.max_height - 50 or player.y < 50 then
     player.y = last_player_y
   end
 
