@@ -5,6 +5,17 @@ global_state = {
   active_collectables = 10,
 }
 
+function reset_game()
+  global_state.active_collectables = 10
+  global_state.active_enemies = 3
+  global_state.player.x = 100
+  global_state.player.y = 100
+  global_state.player.active = true
+  global_state.enemies = create_enemies(global_state.active_enemies)
+  global_state.collectables = create_collectables(global_state.active_collectables)
+  global_state.game_state = "running"
+end
+
 function love.load()
   math.randomseed(os.time())
   love.window.setFullscreen(true)
@@ -31,9 +42,6 @@ function love.load()
     update = update_player,
     draw = draw_square,
   }
-  global_state.enemies = create_enemies(global_state.active_enemies)
-  global_state.collectables = create_collectables(global_state.active_collectables)
-  global_state.game_state = "running"
   global_state.win_screen = {
     x = 0,
     y = 0,
@@ -45,6 +53,9 @@ function love.load()
     update = function(win_screen, dt)
       if love.keyboard.isDown("escape", "q") then
         love.window.close()
+      end
+      if love.keyboard.isDown("return", "space") then
+        reset_game()
       end
     end,
     draw = function(self)
@@ -69,6 +80,9 @@ function love.load()
     update = function(lose_screen, dt)
       if love.keyboard.isDown("escape", "q") then
         love.window.close()
+      end
+      if love.keyboard.isDown("return", "space") then
+        reset_game()
       end
     end,
     draw = function(self)
@@ -108,6 +122,7 @@ function love.load()
   }
   global_state.big_font = love.graphics.newFont(36)
   global_state.small_font = love.graphics.newFont(12)
+  reset_game()
 end
 
 function create_entities(count, overwrites)
