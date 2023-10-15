@@ -3,11 +3,30 @@ global_state = {
   game_state = "loading",
   active_enemies = 3,
   active_collectables = 10,
+  level = 1,
+  levels = {
+    {speeds = {200}, active_enemies = 1, active_collectables = 5, description = "intro"},
+    {speeds = {200, 300}, active_enemies = 2, active_collectables = 10, description = "kids stuff"},
+    {speeds = {200, 300}, active_enemies = 3, active_collectables = 15, description = "novice"},
+    {speeds = {150, 200, 310}, active_enemies = 3, active_collectables = 40, description = "student"},
+    {speeds = {150, 220}, active_enemies = 5, active_collectables = 15, description = "apprentice"},
+    {speeds = {180, 220, 310}, active_enemies = 5, active_collectables = 25, description = "yeoman"},
+    {speeds = {150}, active_enemies = 7, active_collectables = 10, description = "seasoned"},
+    {speeds = {180, 240}, active_enemies = 7, active_collectables = 20, description = "professor"},
+    {speeds = {150, 250, 310}, active_enemies = 8, active_collectables = 20, description = "speed racer"},
+    {speeds = {150, 220, 250}, active_enemies = 10, active_collectables = 5, description = "dangerous"},
+    {speeds = {180, 190, 200, 210, 220, 250, 280, 310}, active_enemies = 12, active_collectables = 30, description = "sorceror"},
+  },
 }
 
 function reset_game()
-  global_state.active_collectables = 10
-  global_state.active_enemies = 3
+  if global_state.level > #global_state.levels then
+    global_state.active_collectables = 100
+    global_state.active_enemies = 18
+  else
+    global_state.active_collectables = global_state.levels[global_state.level].active_collectables
+    global_state.active_enemies = global_state.levels[global_state.level].active_enemies
+  end
   global_state.player.x = 100
   global_state.player.y = 100
   global_state.player.active = true
@@ -63,10 +82,16 @@ function love.load()
       love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
       love.graphics.setColor(0, 0, 0)
 
+      local level = global_state.levels[global_state.level]
+      local description = "unbelievable #" .. global_state.level - #global_state.levels
+      if level then
+        description = level.description
+      end
+
       love.graphics.setFont(global_state.big_font)
       love.graphics.print("you win!", self.width/2 - 80, self.height/2 - 40)
       love.graphics.setFont(global_state.small_font)
-      love.graphics.print("press q to exit", self.width/ 2 - 50, self.height/2 + 40)
+      love.graphics.print("press space to continue. next level: " .. description, self.width/ 2 - 115, self.height/2 + 40)
     end,
   }
   global_state.lose_screen = {
@@ -90,10 +115,16 @@ function love.load()
       love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
       love.graphics.setColor(0, 0, 0)
 
+      local level = global_state.levels[global_state.level]
+      local description = "unbelievable #" .. global_state.level - #global_state.levels
+      if level then
+        description = level.description
+      end
+
       love.graphics.setFont(global_state.big_font)
       love.graphics.print("you lost", self.width/2 - 80, self.height/2 - 40)
       love.graphics.setFont(global_state.small_font)
-      love.graphics.print("press q to exit", self.width/2 - 50, self.height/2 + 40)
+      love.graphics.print("press space to continue. current level: " .. description, self.width/ 2 - 115, self.height/2 + 40)
     end,
   }
   global_state.error_screen = {
@@ -166,16 +197,28 @@ function create_collectables(count)
 end
 
 function create_enemies(count)
-  return create_entities(count, {
+  local speeds = {180, 190, 200, 210, 220, 250, 280, 310}
+  local level = global_state.levels[global_state.level]
+  if level then
+    speeds = level.speeds
+  end
+  local enemies = create_entities(count, {
     r = 1,
     g = 0,
     b = 0,
     x_speed = 200,
     y_speed = 200,
     update = update_enemy,
-    width = 60,
-    height = 60,
+    width = 70,
+    height = 70,
   })
+  for enemy_index = 1, #enemies do
+    enemies[enemy_index].x_speed = speeds[math.random(1, #speeds)]
+    enemies[enemy_index].y_speed = speeds[math.random(1, #speeds)]
+    enemies[enemy_index].width = enemies[enemy_index].width * enemies[enemy_index].x_speed / 310
+    enemies[enemy_index].height = enemies[enemy_index].height * enemies[enemy_index].y_speed / 310
+  end
+  return enemies
 end
 
 function rect_collide(o1, o2)
@@ -318,6 +361,7 @@ function love.update(dt)
 
     if global_state.active_collectables == 0 then
       global_state.game_state = "win"
+      global_state.level = global_state.level + 1
     elseif global_state.active_enemies == 0 then
       global_state.game_state = "lose"
     end
