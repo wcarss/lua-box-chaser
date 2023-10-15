@@ -1,12 +1,11 @@
-globalSettings = {}
-squares = {}
-square_count = 100
+global_settings = {}
+global_state = {}
 
 function love.load()
   math.randomseed(os.time())
   love.window.setFullscreen(true)
-  globalSettings.maxWidth, globalSettings.maxHeight, _ = love.window.getMode()
-  squares[0] = {
+  global_settings.maxWidth, global_settings.maxHeight, _ = love.window.getMode()
+  global_state.player = {
     x = 100,
     y = 100,
     width = 50,
@@ -23,47 +22,62 @@ function love.load()
     y_acceleration = 2000,
     y_velocity = 0,
     max_y_velocity = 500,
+    update = update_player,
+    draw = draw_square,
   }
-  squares[1] = {
-    x = 500,
-    y = 500,
-    width = 50,
-    height = 50,
-    angle = 0,
-    r = 1,
-    g = 0,
-    b = 0,
-    x_dir = 1,
-    x_speed = 200,
-    y_dir = 1,
-    y_speed = 200
-  }
-  for square_index = 2, square_count do
-  	squares[square_index] = {
+  global_state.enemies = create_enemies(1)
+  global_state.collectables = create_collectables(10)
+end
+
+function create_entities(count, overwrites)
+  local entities = {}
+  for entity_index = 1, count do
+    entities[entity_index] = {
+      active = true,
       x = math.random(100, 500),
       y = math.random(100, 500),
       width = 14,
       height = 14,
       angle = 0,
-      r = 0.95,
-      g = 0.85,
-      b = 0.05,
+      r = 0.5,
+      g = 0.5,
+      b = 0.5,
       x_dir = 1,
       x_speed = math.random(1,8)*14,
       y_dir = 1,
-      y_speed = math.random(1,8)*14
+      y_speed = math.random(1,8)*14,
+      draw = draw_square,
     }
+    for k, v in pairs(overwrites) do
+      entities[entity_index][k] = v
+    end
   end
+
+  return entities
 end
 
-function old_rect_collide(o1, o2)
-  return (
-  	(o1.x > o2.x and o1.x < o2.x + o2.width) or
-  	(o1.x + o1.width > o2.x and o1.x + o1.width < o2.x + o2.width)
-  ) and (
-    (o1.y > o2.y and o1.y < o2.y + o2.height) or
-    (o1.y + o1.height > o2.y and o1.y + o1.height < o2.y + o2.height)
-  )
+function create_collectables(count)
+  return create_entities(count, {
+    r = 0.95,
+    g = 0.85,
+    b = 0.05,
+    update = update_collectable,
+  })
+end
+
+function create_enemies(count)
+  return create_entities(count, {
+    x = 500,
+    y = 500,
+    r = 1,
+    g = 0,
+    b = 0,
+    x_speed = 200,
+    y_speed = 200,
+    update = update_collectable,
+    width = 50,
+    height = 50,
+  })
 end
 
 function rect_collide(o1, o2)
@@ -76,8 +90,8 @@ function rect_collide(o1, o2)
   o2_top = o2.y - o2.height/2
   o2_bottom = o2.y + o2.height/2
   return (
-  	(o1_left > o2_left and o1_right < o2_right) or
-  	(o1_right > o2_left and o1_right < o2_right)
+    (o1_left > o2_left and o1_right < o2_right) or
+    (o1_right > o2_left and o1_right < o2_right)
   ) and (
     (o1_top > o2_top and o1_top < o2_bottom) or
     (o2_bottom > o2_top and o2_bottom < o2_bottom)
@@ -86,7 +100,7 @@ end
 
 function draw_square(square)
   if square.active == false then
-  	return
+    return
   end
 
   love.graphics.push()
@@ -97,83 +111,93 @@ function draw_square(square)
   love.graphics.pop()
 end
 
-function update_square(square, dt)
+function update_collectable(square, dt)
   if square.active == false then
-  	return
+    return
   end
 
   square.angle = square.angle + 0.1
-  if square.x > globalSettings.maxWidth - 50 then
+  if square.x > global_settings.maxWidth - 50 then
     square.x_dir = -1;
   elseif square.x < 50 then
     square.x_dir = 1;
   end
   square.x = square.x + square.x_dir * square.x_speed * dt
 
-  if square.y > globalSettings.maxHeight - 50 then
+  if square.y > global_settings.maxHeight - 50 then
     square.y_dir = -1;
   elseif square.y < 50 then
     square.y_dir = 1;
   end
   square.y = square.y + square.y_dir * square.y_speed * dt
 
-  if rect_collide(square, squares[0]) then
-  	square.active = false
+  if rect_collide(square, global_state.player) then
+    square.active = false
   end
 end
 
 function love.draw()
-  for square_index = 0, square_count do
-  	draw_square(squares[square_index])
+  for collectable_index = 1, #global_state.collectables do
+    local elem = global_state.collectables[collectable_index]
+    elem.draw(elem)
   end
+  for enemy_index = 1, #global_state.enemies do
+    local elem = global_state.enemies[enemy_index]
+    elem.draw(elem)
+  end
+  global_state.player.draw(global_state.player)
 end
 
 function love.update(dt)
-  update_player(squares[0], dt)
-  for square_index = 1, square_count do
-  	update_square(squares[square_index], dt)
+  for collectable_index = 1, #global_state.collectables do
+    local elem = global_state.collectables[collectable_index]
+    elem.update(elem, dt)
   end
+  for enemy_index = 1, #global_state.enemies do
+    local elem = global_state.enemies[enemy_index]
+    elem.update(elem, dt)
+  end
+  global_state.player.update(global_state.player, dt)
 end
 
 function update_player(player, dt)
-
-  no_y_acceleration = true
+  local no_y_acceleration = true
   if love.keyboard.isDown("up") then
-  	no_y_acceleration = false
-  	player.y_velocity = player.y_velocity - player.y_acceleration * dt;
-  	if player.y_velocity < -player.max_y_velocity then
-  	  player.y_velocity = -player.max_y_velocity
-  	end
+    no_y_acceleration = false
+    player.y_velocity = player.y_velocity - player.y_acceleration * dt;
+    if player.y_velocity < -player.max_y_velocity then
+      player.y_velocity = -player.max_y_velocity
+    end
   end
 
   if love.keyboard.isDown("down") then
-  	no_y_acceleration = false
+    no_y_acceleration = false
     player.y_velocity = player.y_velocity + player.y_acceleration * dt;
-  	if player.y_velocity > player.max_y_velocity then
-  	  player.y_velocity = player.max_y_velocity
-  	end
+    if player.y_velocity > player.max_y_velocity then
+      player.y_velocity = player.max_y_velocity
+    end
   end
 
-  no_x_acceleration = true
+  local no_x_acceleration = true
   if love.keyboard.isDown("left") then
-  	no_x_acceleration = false
-  	player.x_velocity = player.x_velocity - player.x_acceleration * dt;
-  	if player.x_velocity < -player.max_x_velocity then
-  	  player.x_velocity = -player.max_x_velocity
-  	end
+    no_x_acceleration = false
+    player.x_velocity = player.x_velocity - player.x_acceleration * dt;
+    if player.x_velocity < -player.max_x_velocity then
+      player.x_velocity = -player.max_x_velocity
+    end
   end
 
   if love.keyboard.isDown("right") then
-  	no_x_acceleration = false
-  	player.x_velocity = player.x_velocity + player.x_acceleration * dt;
-  	if player.x_velocity > player.max_x_velocity then
-  	  player.x_velocity = player.max_x_velocity
-  	end
+    no_x_acceleration = false
+    player.x_velocity = player.x_velocity + player.x_acceleration * dt;
+    if player.x_velocity > player.max_x_velocity then
+      player.x_velocity = player.max_x_velocity
+    end
   end
 
   if no_x_acceleration and player.x_velocity ~= 0 then
     if player.x_velocity > 1 then
-  	  player.x_velocity = player.x_velocity - player.x_acceleration * dt
+      player.x_velocity = player.x_velocity - player.x_acceleration * dt
     elseif player.x_velocity < -1 then
       player.x_velocity = player.x_velocity + player.x_acceleration * dt
     else
@@ -183,7 +207,7 @@ function update_player(player, dt)
 
   if no_y_acceleration and player.y_velocity ~= 0 then
     if player.y_velocity > 1 then
-  	  player.y_velocity = player.y_velocity - player.y_acceleration * dt
+      player.y_velocity = player.y_velocity - player.y_acceleration * dt
     elseif player.y_velocity < -1 then
       player.y_velocity = player.y_velocity + player.y_acceleration * dt
     else
@@ -191,19 +215,32 @@ function update_player(player, dt)
     end
   end
 
-  last_player_x = player.x
+  local last_player_x = player.x
   player.x = player.x + player.x_velocity * dt
-  if player.x > globalSettings.maxWidth - 50 or player.x < 50 then
+  if player.x > global_settings.maxWidth - 50 or player.x < 50 then
     player.x = last_player_x
   end
 
-  last_player_y = player.y
+  local last_player_y = player.y
   player.y = player.y + player.y_velocity * dt
-  if player.y > globalSettings.maxHeight - 50 or player.y < 50 then
+  if player.y > global_settings.maxHeight - 50 or player.y < 50 then
     player.y = last_player_y
   end
 
   if love.keyboard.isDown("escape", "q") then
-  	love.window.close()
+    love.window.close()
   end
+end
+
+
+
+-- unused
+function old_rect_collide(o1, o2)
+  return (
+    (o1.x > o2.x and o1.x < o2.x + o2.width) or
+    (o1.x + o1.width > o2.x and o1.x + o1.width < o2.x + o2.width)
+  ) and (
+    (o1.y > o2.y and o1.y < o2.y + o2.height) or
+    (o1.y + o1.height > o2.y and o1.y + o1.height < o2.y + o2.height)
+  )
 end
