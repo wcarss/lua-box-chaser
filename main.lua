@@ -2,7 +2,7 @@ global_settings = {}
 global_state = {
   game_state = "loading",
   active_enemies = 3,
-  active_collectables = 5,
+  active_collectables = 10,
 }
 
 function love.load()
@@ -49,8 +49,11 @@ function love.load()
       love.graphics.setColor(self.r, self.g, self.b)
       love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
       love.graphics.setColor(0, 0, 0)
-      love.graphics.print("win", self.width/2 - 7, self.height/2)
-      love.graphics.print("press q to exit", self.width/ 2 - 40, self.height/2 + 40)
+
+      love.graphics.setFont(global_state.big_font)
+      love.graphics.print("you win!", self.width/2 - 80, self.height/2 - 40)
+      love.graphics.setFont(global_state.small_font)
+      love.graphics.print("press q to exit", self.width/ 2 - 50, self.height/2 + 40)
     end,
   }
   global_state.lose_screen = {
@@ -70,8 +73,11 @@ function love.load()
       love.graphics.setColor(self.r, self.g, self.b)
       love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
       love.graphics.setColor(0, 0, 0)
-      love.graphics.print("lose", self.width/2 - 10, self.height/2)
-      love.graphics.print("press q to exit", self.width/2 - 40, self.height/2 + 40)
+
+      love.graphics.setFont(global_state.big_font)
+      love.graphics.print("you lost", self.width/2 - 80, self.height/2 - 40)
+      love.graphics.setFont(global_state.small_font)
+      love.graphics.print("press q to exit", self.width/2 - 50, self.height/2 + 40)
     end,
   }
   global_state.error_screen = {
@@ -91,10 +97,15 @@ function love.load()
       love.graphics.setColor(self.r, self.g, self.b)
       love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
       love.graphics.setColor(0, 0, 0)
-      love.graphics.print("error", self.width/2 - 14, self.height/2)
-      love.graphics.print("press q to exit", self.width/2 - 40, self.height/2 + 40)
+
+      love.graphics.setFont(global_state.big_font)
+      love.graphics.print("error", self.width/2 - 60, self.height/2 - 40)
+      love.graphics.setFont(global_state.small_font)
+      love.graphics.print("press q to exit", self.width/2 - 50, self.height/2 + 40)
     end,
   }
+  global_state.big_font = love.graphics.newFont(36)
+  global_state.small_font = love.graphics.newFont(12)
 end
 
 function create_entities(count, overwrites)
