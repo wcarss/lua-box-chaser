@@ -221,28 +221,19 @@ function create_enemies(count)
   return enemies
 end
 
-function rect_collide(o1, o2)
-  o1_left = o1.x - o1.width/2
-  o1_right = o1.x + o1.width/2
-  o1_top = o1.y - o1.height/2
-  o1_bottom = o1.y + o1.height/2
-  o2_left = o2.x - o2.width/2
-  o2_right = o2.x + o2.width/2
-  o2_top = o2.y - o2.height/2
-  o2_bottom = o2.y + o2.height/2
-  return ((
-    (o1_left > o2_left and o1_left < o2_right) or
-    (o1_right > o2_left and o1_right < o2_right)
-  ) and (
-    (o1_top > o2_top and o1_top < o2_bottom) or
-    (o1_bottom > o2_top and o1_bottom < o2_bottom)
-  )) or ((
-    (o2_left > o1_left and o2_left < o1_right) or
-    (o2_right > o1_left and o2_right < o1_right)
-  ) and (
-    (o2_top > o1_top and o2_top < o1_bottom) or
-    (o2_bottom > o1_top and o2_bottom < o1_bottom)
-  ))
+function rect_collide(a, b)
+  local a_left = a.x - a.width/2
+  local a_right = a.x + a.width/2
+  local a_top = a.y - a.height/2
+  local a_bottom = a.y + a.height/2
+  local b_left = b.x - b.width/2
+  local b_right = b.x + b.width/2
+  local b_top = b.y - b.height/2
+  local b_bottom = b.y + b.height/2
+  return (
+    (a_left <= b_right and a_right >= b_left) and
+    (a_top <= b_bottom and a_bottom >= b_top)
+  )
 end
 
 function draw_square(square)
