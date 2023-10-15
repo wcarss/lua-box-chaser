@@ -1,5 +1,9 @@
 global_settings = {}
-global_state = {}
+global_state = {
+  game_state = "loading",
+  active_enemies = 3,
+  active_collectables = 5,
+}
 
 function love.load()
   math.randomseed(os.time())
@@ -25,8 +29,72 @@ function love.load()
     update = update_player,
     draw = draw_square,
   }
-  global_state.enemies = create_enemies(3)
-  global_state.collectables = create_collectables(10)
+  global_state.enemies = create_enemies(global_state.active_enemies)
+  global_state.collectables = create_collectables(global_state.active_collectables)
+  global_state.game_state = "running"
+  global_state.win_screen = {
+    x = 0,
+    y = 0,
+    width = global_settings.max_width,
+    height = global_settings.max_height,
+    r = 0,
+    g = 0.8,
+    b = 0.15,
+    update = function(win_screen, dt)
+      if love.keyboard.isDown("escape", "q") then
+        love.window.close()
+      end
+    end,
+    draw = function(self)
+      love.graphics.setColor(self.r, self.g, self.b)
+      love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+      love.graphics.setColor(0, 0, 0)
+      love.graphics.print("win", self.width/2 - 7, self.height/2)
+      love.graphics.print("press q to exit", self.width/ 2 - 40, self.height/2 + 40)
+    end,
+  }
+  global_state.lose_screen = {
+    x = 0,
+    y = 0,
+    width = global_settings.max_width,
+    height = global_settings.max_height,
+    r = 0.8,
+    g = 0,
+    b = 0.15,
+    update = function(lose_screen, dt)
+      if love.keyboard.isDown("escape", "q") then
+        love.window.close()
+      end
+    end,
+    draw = function(self)
+      love.graphics.setColor(self.r, self.g, self.b)
+      love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+      love.graphics.setColor(0, 0, 0)
+      love.graphics.print("lose", self.width/2 - 10, self.height/2)
+      love.graphics.print("press q to exit", self.width/2 - 40, self.height/2 + 40)
+    end,
+  }
+  global_state.error_screen = {
+    x = 0,
+    y = 0,
+    width = global_settings.max_width,
+    height = global_settings.max_height,
+    r = 1,
+    g = 1,
+    b = 1,
+    update = function(error_screen, dt)
+      if love.keyboard.isDown("escape", "q") then
+        love.window.close()
+      end
+    end,
+    draw = function(self)
+      love.graphics.setColor(self.r, self.g, self.b)
+      love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+      love.graphics.setColor(0, 0, 0)
+      love.graphics.print("error", self.width/2 - 14, self.height/2)
+      love.graphics.print("press q to exit", self.width/2 - 40, self.height/2 + 40)
+    end,
+  }
 end
 
 function create_entities(count, overwrites)
@@ -145,6 +213,11 @@ function update_enemy(square, dt)
 
   square.x = square.x + square.x_dir * square.x_speed * dt
   square.y = square.y + square.y_dir * square.y_speed * dt
+
+  if rect_collide(square, global_state.player) then
+    player.active = false
+    global_state.game_state = "lose"
+  end
 end
 
 function update_collectable(square, dt)
@@ -169,34 +242,61 @@ function update_collectable(square, dt)
 
   if rect_collide(square, global_state.player) then
     square.active = false
+    global_state.active_collectables = global_state.active_collectables - 1
   end
 end
 
 function love.draw()
-  for collectable_index = 1, #global_state.collectables do
-    local elem = global_state.collectables[collectable_index]
-    elem.draw(elem)
+  if global_state.game_state == "win" then
+    global_state.win_screen.draw(global_state.win_screen)
+  elseif global_state.game_state == "lose" then
+    global_state.lose_screen.draw(global_state.lose_screen)
+  elseif global_state.game_state == "running" then
+    for collectable_index = 1, #global_state.collectables do
+      local elem = global_state.collectables[collectable_index]
+      elem.draw(elem)
+    end
+    for enemy_index = 1, #global_state.enemies do
+      local elem = global_state.enemies[enemy_index]
+      elem.draw(elem)
+    end
+    global_state.player.draw(global_state.player)
+  else
+    global_state.error_screen.draw(global_state.error_screen)
   end
-  for enemy_index = 1, #global_state.enemies do
-    local elem = global_state.enemies[enemy_index]
-    elem.draw(elem)
-  end
-  global_state.player.draw(global_state.player)
 end
 
 function love.update(dt)
-  for collectable_index = 1, #global_state.collectables do
-    local elem = global_state.collectables[collectable_index]
-    elem.update(elem, dt)
+  if global_state.game_state == "running" then
+    for collectable_index = 1, #global_state.collectables do
+      local elem = global_state.collectables[collectable_index]
+      elem.update(elem, dt)
+    end
+    for enemy_index = 1, #global_state.enemies do
+      local elem = global_state.enemies[enemy_index]
+      elem.update(elem, dt)
+    end
+    global_state.player.update(global_state.player, dt)
+
+    if global_state.active_collectables == 0 then
+      global_state.game_state = "win"
+    elseif global_state.active_enemies == 0 then
+      global_state.game_state = "lose"
+    end
+  elseif global_state.game_state == "win" then
+    global_state.win_screen.update(global_state.win_screen, dt)
+  elseif global_state.game_state == "lose" then
+    global_state.lose_screen.update(global_state.lose_screen, dt)
+  else
+    global_state.error_screen.update(global_state.error_screen, dt)
   end
-  for enemy_index = 1, #global_state.enemies do
-    local elem = global_state.enemies[enemy_index]
-    elem.update(elem, dt)
-  end
-  global_state.player.update(global_state.player, dt)
 end
 
 function update_player(player, dt)
+  if player.active == false then
+    return
+  end
+
   local no_y_acceleration = true
   if love.keyboard.isDown("up") then
     no_y_acceleration = false
@@ -261,10 +361,6 @@ function update_player(player, dt)
   player.y = player.y + player.y_velocity * dt
   if player.y > global_settings.max_height - 50 or player.y < 50 then
     player.y = last_player_y
-  end
-
-  if love.keyboard.isDown("escape", "q") then
-    love.window.close()
   end
 end
 
