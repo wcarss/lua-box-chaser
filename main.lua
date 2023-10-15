@@ -12,9 +12,11 @@ function love.load()
   global_state.player = {
     x = 100,
     y = 100,
-    width = 50,
-    height = 50,
+    width = 40,
+    height = 40,
     angle = 0,
+    xr = 4,
+    yr = 4,
     r = 0,
     g = 1,
     b = 0,
@@ -118,6 +120,8 @@ function create_entities(count, overwrites)
       width = 14,
       height = 14,
       angle = 0,
+      xr = 8,
+      yr = 8,
       r = 0.5,
       g = 0.5,
       b = 0.5,
@@ -137,6 +141,8 @@ end
 
 function create_collectables(count)
   return create_entities(count, {
+    xr = 4,
+    yr = 4,
     r = 0.95,
     g = 0.85,
     b = 0.05,
@@ -152,8 +158,8 @@ function create_enemies(count)
     x_speed = 200,
     y_speed = 200,
     update = update_enemy,
-    width = 50,
-    height = 50,
+    width = 60,
+    height = 60,
   })
 end
 
@@ -184,7 +190,7 @@ function draw_square(square)
   love.graphics.translate(square.x, square.y)
   love.graphics.rotate(square.angle)
   love.graphics.setColor(square.r, square.g, square.b)
-  love.graphics.rectangle("fill", -square.width/2, -square.height/2, square.width, square.height, 8, 8) -- origin in the middle
+  love.graphics.rectangle("fill", -square.width/2, -square.height/2, square.width, square.height, square.xr, square.yr) -- origin in the middle
   love.graphics.pop()
 end
 
