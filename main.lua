@@ -172,13 +172,19 @@ function rect_collide(o1, o2)
   o2_right = o2.x + o2.width/2
   o2_top = o2.y - o2.height/2
   o2_bottom = o2.y + o2.height/2
-  return (
-    (o1_left > o2_left and o1_right < o2_right) or
+  return ((
+    (o1_left > o2_left and o1_left < o2_right) or
     (o1_right > o2_left and o1_right < o2_right)
   ) and (
     (o1_top > o2_top and o1_top < o2_bottom) or
-    (o2_bottom > o2_top and o2_bottom < o2_bottom)
-  )
+    (o1_bottom > o2_top and o1_bottom < o2_bottom)
+  )) or ((
+    (o2_left > o1_left and o2_left < o1_right) or
+    (o2_right > o1_left and o2_right < o1_right)
+  ) and (
+    (o2_top > o1_top and o2_top < o1_bottom) or
+    (o2_bottom > o1_top and o2_bottom < o1_bottom)
+  ))
 end
 
 function draw_square(square)
@@ -381,15 +387,14 @@ function update_player(player, dt)
   end
 end
 
+-- useful as an update method, for debugging motion and collision:
+function be_still(square, dt)
+  if square.active == false then
+    return
+  end
 
-
--- unused
-function old_rect_collide(o1, o2)
-  return (
-    (o1.x > o2.x and o1.x < o2.x + o2.width) or
-    (o1.x + o1.width > o2.x and o1.x + o1.width < o2.x + o2.width)
-  ) and (
-    (o1.y > o2.y and o1.y < o2.y + o2.height) or
-    (o1.y + o1.height > o2.y and o1.y + o1.height < o2.y + o2.height)
-  )
+  if rect_collide(square, global_state.player) then
+    square.active = false
+    global_state.active_collectables = global_state.active_collectables - 1
+  end
 end
