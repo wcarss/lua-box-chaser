@@ -316,6 +316,10 @@ function love.update(dt)
 end
 
 function update_player(player, dt)
+  if love.keyboard.isDown("escape", "q") then
+    love.window.close()
+  end
+
   if player.active == false then
     return
   end
@@ -355,22 +359,30 @@ function update_player(player, dt)
   end
 
   if no_x_acceleration and player.x_velocity ~= 0 then
-    if player.x_velocity > 1 then
+    if player.x_velocity > 0 then
       player.x_velocity = player.x_velocity - player.x_acceleration * dt
-    elseif player.x_velocity < -1 then
+      if player.x_velocity < 0 then
+        player.x_velocity = 0
+      end
+    elseif player.x_velocity < 0 then
       player.x_velocity = player.x_velocity + player.x_acceleration * dt
-    else
-      player.x_velocity = 0
+      if player.x_velocity > 0 then
+        player.x_velocity = 0
+      end
     end
   end
 
   if no_y_acceleration and player.y_velocity ~= 0 then
-    if player.y_velocity > 1 then
+    if player.y_velocity > 0 then
       player.y_velocity = player.y_velocity - player.y_acceleration * dt
-    elseif player.y_velocity < -1 then
+      if player.y_velocity < 0 then
+        player.y_velocity = 0
+      end
+    elseif player.y_velocity < 0 then
       player.y_velocity = player.y_velocity + player.y_acceleration * dt
-    else
-      player.y_velocity = 0
+      if player.y_velocity > 0 then
+        player.y_velocity = 0
+      end
     end
   end
 
