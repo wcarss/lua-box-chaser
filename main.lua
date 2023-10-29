@@ -1,3 +1,5 @@
+require 'slam'
+
 global_settings = {}
 global_state = {
   game_state = "loading",
@@ -71,10 +73,14 @@ function love.load()
     b = 0.15,
     update = function(win_screen, dt)
       if love.keyboard.isDown("escape", "q") then
-        love.window.close()
+        love.event.quit()
       end
       if love.keyboard.isDown("return", "space") then
+        love.audio.play(global_state.sounds.box_chase_groove)
         reset_game()
+        --if not global_state.sounds.level_start:isPlaying() then
+          love.audio.play(global_state.sounds.level_start)
+        --end
       end
     end,
     draw = function(self)
@@ -104,10 +110,14 @@ function love.load()
     b = 0.15,
     update = function(lose_screen, dt)
       if love.keyboard.isDown("escape", "q") then
-        love.window.close()
+        love.event.quit()
       end
       if love.keyboard.isDown("return", "space") then
+        love.audio.play(global_state.sounds.box_chase_groove)
         reset_game()
+        --if not global_state.sounds.level_start:isPlaying() then
+          love.audio.play(global_state.sounds.level_start)
+        --end
       end
     end,
     draw = function(self)
@@ -137,7 +147,7 @@ function love.load()
     b = 1,
     update = function(error_screen, dt)
       if love.keyboard.isDown("escape", "q") then
-        love.window.close()
+        love.event.quit()
       end
     end,
     draw = function(self)
@@ -153,7 +163,17 @@ function love.load()
   }
   global_state.big_font = love.graphics.newFont(36)
   global_state.small_font = love.graphics.newFont(12)
+  global_state.sounds = {}
+  global_state.sounds.collectable = love.audio.newSource("collectable.wav", "static")
+  global_state.sounds.enemy = love.audio.newSource("enemy.wav", "static")
+  global_state.sounds.level_start = love.audio.newSource("level_start.wav", "static")
+  global_state.sounds.box_chase_groove = love.audio.newSource("box_chase_groove.wav", "static")
+  global_state.sounds.box_chase_groove:setLooping(true)
+  love.audio.play(global_state.sounds.box_chase_groove)
   reset_game()
+  --if not global_state.sounds.level_start:isPlaying() then
+    love.audio.play(global_state.sounds.level_start)
+  --end
 end
 
 function create_entities(count, overwrites)
@@ -289,6 +309,10 @@ function update_enemy(square, dt)
   if rect_collide(square, global_state.player) then
     player.active = false
     global_state.game_state = "lose"
+    love.audio.stop(global_state.sounds.box_chase_groove)
+    --if not global_state.sounds.enemy:isPlaying() then
+        love.audio.play(global_state.sounds.enemy)
+   -- end
   end
 end
 
@@ -315,6 +339,9 @@ function update_collectable(square, dt)
   if rect_collide(square, global_state.player) then
     square.active = false
     global_state.active_collectables = global_state.active_collectables - 1
+    -- if not global_state.sounds.collectable:isPlaying() then
+    global_state.sounds.collectable:play()
+    -- end
   end
 end
 
@@ -353,8 +380,7 @@ function love.update(dt)
     if global_state.active_collectables == 0 then
       global_state.game_state = "win"
       global_state.level = global_state.level + 1
-    elseif global_state.active_enemies == 0 then
-      global_state.game_state = "lose"
+      love.audio.stop(global_state.sounds.box_chase_groove)
     end
   elseif global_state.game_state == "win" then
     global_state.win_screen.update(global_state.win_screen, dt)
@@ -367,7 +393,7 @@ end
 
 function update_player(player, dt)
   if love.keyboard.isDown("escape", "q") then
-    love.window.close()
+    love.event.quit()
   end
 
   if player.active == false then
